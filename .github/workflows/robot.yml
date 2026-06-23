@@ -1,0 +1,41 @@
+name: WorldPulse Robot
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # a cada 15 minutos
+  workflow_dispatch:           # permite disparo manual
+
+jobs:
+  run-robot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Disparar robô de notícias
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "${{ secrets.SITE_URL }}/api/robot" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"maxSources": 22, "maxItemsPerSource": 10}' \
+            --max-time 420)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -1)
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Robot failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Robot completed successfully"
+          echo "$BODY" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(f'Processed: {d.get(\"processed\", 0)}')
+print(f'Published: {d.get(\"published\", 0)}')
+print(f'Pending:   {d.get(\"pending\", 0)}')
+" 2>/dev/null || true
