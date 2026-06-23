@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '*/15 * * * *'   # a cada 15 minutos
   workflow_dispatch:           # permite disparo manual
-  push:
-    branches: [main]
-    paths: ['.github/workflows/robot.yml']
 
 jobs:
   run-robot:
