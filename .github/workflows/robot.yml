@@ -35,10 +35,4 @@ jobs:
           fi
 
           echo "✅ Robot completed successfully"
-          echo "$BODY" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(f'Processed: {d.get(\"processed\", 0)}')
-print(f'Published: {d.get(\"published\", 0)}')
-print(f'Pending:   {d.get(\"pending\", 0)}')
-" 2>/dev/null || true
+          echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print('Processed:',d.get('processed',0)); print('Published:',d.get('published',0)); print('Pending:',d.get('pending',0))" 2>/dev/null || true
