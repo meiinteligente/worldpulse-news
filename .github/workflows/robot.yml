@@ -20,7 +20,7 @@ jobs:
             -X POST "${{ secrets.SITE_URL }}/api/robot" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
-            -d '{"maxSources": 22, "maxItemsPerSource": 10}' \
+            -d '{"maxSources": 6, "maxItemsPerSource": 8}' \
             --max-time 420)
 
           HTTP_CODE=$(echo "$RESPONSE" | tail -1)
