@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useState } from 'react'
 
 interface Props {
@@ -10,9 +9,6 @@ interface Props {
   className?: string
   sizes?: string
   priority?: boolean
-  width?: number
-  height?: number
-  // Fallback rendered when image fails or src is empty
   fallbackIcon: string
   fallbackColor: string
   fallbackSize?: 'sm' | 'md' | 'lg' | 'hero'
@@ -21,12 +17,8 @@ interface Props {
 export default function SmartImage({
   src,
   alt,
-  fill,
   className,
-  sizes,
   priority,
-  width,
-  height,
   fallbackIcon,
   fallbackColor,
   fallbackSize = 'md',
@@ -40,30 +32,28 @@ export default function SmartImage({
     hero: 'text-8xl',
   }[fallbackSize]
 
-  if (!src || failed) {
-    return (
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{
-          background: `linear-gradient(135deg, ${fallbackColor}18 0%, ${fallbackColor}35 100%)`,
-        }}
-      >
-        <span className={`${iconSize} opacity-40 select-none`}>{fallbackIcon}</span>
-      </div>
-    )
-  }
+  const Fallback = () => (
+    <div
+      className="absolute inset-0 flex items-center justify-center"
+      style={{
+        background: `linear-gradient(135deg, ${fallbackColor}18 0%, ${fallbackColor}35 100%)`,
+      }}
+    >
+      <span className={`${iconSize} opacity-40 select-none`}>{fallbackIcon}</span>
+    </div>
+  )
+
+  if (!src || failed) return <Fallback />
 
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={src}
       alt={alt}
-      fill={fill}
-      width={!fill ? width : undefined}
-      height={!fill ? height : undefined}
-      className={className}
-      sizes={sizes}
-      priority={priority}
       onError={() => setFailed(true)}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+      className={`absolute inset-0 w-full h-full object-cover ${className || ''}`}
     />
   )
 }
