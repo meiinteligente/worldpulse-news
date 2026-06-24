@@ -36,7 +36,7 @@ async function getHomeData(lang: Lang) {
   const supabase = createServerClient()
 
   // Featured articles (destaque na homepage)
-  const { data: featured } = await supabase
+  const { data: featuredRaw } = await supabase
     .from('articles_with_stats')
     .select('*')
     .eq('featured', true)
@@ -51,14 +51,22 @@ async function getHomeData(lang: Lang) {
     .order('published_at', { ascending: false })
     .limit(10)
 
-  // Últimas notícias
+  // Últimas notícias (mais artigos para homepage rica)
   const { data: latest } = await supabase
     .from('articles_with_stats')
     .select('*')
     .order('published_at', { ascending: false })
-    .limit(8)
+    .limit(16)
 
-  // Artigos por categoria
+  // Se não há featured manuais, usa top artigos por relevância como hero
+  let featured = (featuredRaw || []) as Article[]
+  if (featured.length === 0 && latest && latest.length > 0) {
+    featured = [...latest]
+      .sort((a, b) => (b.relevance_score || 0) - (a.relevance_score || 0))
+      .slice(0, 4) as Article[]
+  }
+
+  // Artigos por categoria (mais artigos por seção)
   const categoryArticles: Record<string, Article[]> = {}
   for (const cat of CATEGORIES) {
     const { data } = await supabase
@@ -66,12 +74,12 @@ async function getHomeData(lang: Lang) {
       .select('*')
       .eq('category_slug', cat.slug)
       .order('published_at', { ascending: false })
-      .limit(5)
+      .limit(7)
     if (data?.length) categoryArticles[cat.slug] = data
   }
 
   return {
-    featured: (featured || []) as Article[],
+    featured,
     breaking: (breaking || []) as Article[],
     latest: (latest || []) as Article[],
     categoryArticles,
@@ -150,7 +158,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {latest.slice(0, 8).map(article => (
+                  {latest.slice(0, 12).map(article => (
                     <ArticleCard key={article.id} article={article} lang={lang} size="md" />
                   ))}
                 </div>

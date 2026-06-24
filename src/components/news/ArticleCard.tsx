@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { formatTimeAgo, type Lang } from '@/lib/categories'
 import type { Article } from '@/lib/supabase'
 import { MessageCircle, Clock } from 'lucide-react'
+import SmartImage from './SmartImage'
 
 interface Props {
   article: Article
@@ -24,20 +24,20 @@ export default function ArticleCard({ article, lang, size = 'md', showImage = tr
     return (
       <article className="news-card relative rounded-2xl overflow-hidden group cursor-pointer h-[480px] md:h-[520px]">
         <Link href={href} className="block h-full">
-          {article.image_url ? (
-            <Image
-              src={article.image_url}
-              alt={article.image_alt || title}
+          <div className="absolute inset-0">
+            <SmartImage
+              src={article.image_url || ''}
+              alt={article.image_alt || title || ''}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               priority
               sizes="(max-width: 768px) 100vw, 65vw"
+              fallbackIcon={catIcon}
+              fallbackColor={catColor}
+              fallbackSize="hero"
             />
-          ) : (
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${catColor}22, ${catColor}44)` }}>
-              <div className="absolute inset-0 flex items-center justify-center text-9xl opacity-20">{catIcon}</div>
-            </div>
-          )}
+          </div>
+
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
@@ -74,20 +74,18 @@ export default function ArticleCard({ article, lang, size = 'md', showImage = tr
     return (
       <article className="news-card rounded-xl overflow-hidden border border-slate-100 bg-white group cursor-pointer">
         <Link href={href} className="block">
-          {showImage && article.image_url && (
+          {showImage && (
             <div className="relative h-48 overflow-hidden">
-              <Image
-                src={article.image_url}
-                alt={article.image_alt || title}
+              <SmartImage
+                src={article.image_url || ''}
+                alt={article.image_alt || title || ''}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 33vw"
+                fallbackIcon={catIcon}
+                fallbackColor={catColor}
+                fallbackSize="lg"
               />
-            </div>
-          )}
-          {showImage && !article.image_url && (
-            <div className="h-48 flex items-center justify-center text-5xl" style={{ backgroundColor: `${catColor}15` }}>
-              {catIcon}
             </div>
           )}
           <div className="p-4">
@@ -119,20 +117,18 @@ export default function ArticleCard({ article, lang, size = 'md', showImage = tr
     return (
       <article className="group cursor-pointer">
         <Link href={href} className="flex gap-3 items-start py-3 border-b border-slate-100 last:border-0">
-          {showImage && article.image_url && (
+          {showImage && (
             <div className="relative w-20 h-16 rounded-lg overflow-hidden shrink-0">
-              <Image
-                src={article.image_url}
-                alt={article.image_alt || title}
+              <SmartImage
+                src={article.image_url || ''}
+                alt={article.image_alt || title || ''}
                 fill
                 className="object-cover"
                 sizes="80px"
+                fallbackIcon={catIcon}
+                fallbackColor={catColor}
+                fallbackSize="sm"
               />
-            </div>
-          )}
-          {showImage && !article.image_url && (
-            <div className="w-20 h-16 rounded-lg shrink-0 flex items-center justify-center text-2xl" style={{ backgroundColor: `${catColor}15` }}>
-              {catIcon}
             </div>
           )}
           <div className="flex-1 min-w-0">
@@ -153,20 +149,18 @@ export default function ArticleCard({ article, lang, size = 'md', showImage = tr
   return (
     <article className="news-card rounded-xl overflow-hidden border border-slate-100 bg-white group cursor-pointer">
       <Link href={href} className="block">
-        {showImage && article.image_url && (
+        {showImage && (
           <div className="relative h-40 overflow-hidden">
-            <Image
-              src={article.image_url}
-              alt={article.image_alt || title}
+            <SmartImage
+              src={article.image_url || ''}
+              alt={article.image_alt || title || ''}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, 25vw"
+              fallbackIcon={catIcon}
+              fallbackColor={catColor}
+              fallbackSize="md"
             />
-          </div>
-        )}
-        {showImage && !article.image_url && (
-          <div className="h-40 flex items-center justify-center text-4xl" style={{ backgroundColor: `${catColor}15` }}>
-            {catIcon}
           </div>
         )}
         <div className="p-3">

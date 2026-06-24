@@ -21,7 +21,14 @@ const supabase = createClient(
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 const parser = new Parser({
-  customFields: { item: [['media:content', 'mediaContent'], ['media:thumbnail', 'mediaThumbnail']] },
+  customFields: {
+    item: [
+      ['media:content', 'mediaContent'],
+      ['media:thumbnail', 'mediaThumbnail'],
+      ['content:encoded', 'content:encoded'],
+      ['itunes:image', 'itunes.image'],
+    ],
+  },
   timeout: 15000,
 })
 
@@ -32,11 +39,13 @@ interface RSSItem {
   link?: string
   contentSnippet?: string
   content?: string
+  'content:encoded'?: string
   isoDate?: string
   pubDate?: string
   enclosure?: { url?: string }
   mediaContent?: { $?: { url?: string } }
   mediaThumbnail?: { $?: { url?: string } }
+  itunes?: { image?: string }
 }
 
 interface ProcessedArticle {
@@ -70,12 +79,35 @@ function slugify(text: string): string {
 }
 
 function extractImage(item: RSSItem): string | null {
-  return (
+  // 1. Standard media fields
+  const direct =
     item.enclosure?.url ||
     item.mediaContent?.$?.url ||
     item.mediaThumbnail?.$?.url ||
+    item.itunes?.image ||
     null
-  )
+  if (direct && isValidImageUrl(direct)) return direct
+
+  // 2. Extract from HTML content (content:encoded or content)
+  const html = item['content:encoded'] || item.content || ''
+  if (html) {
+    const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i)
+    const candidate = imgMatch?.[1]
+    if (candidate && isValidImageUrl(candidate)) return candidate
+  }
+
+  return null
+}
+
+function isValidImageUrl(url: string): boolean {
+  if (!url.startsWith('http')) return false
+  // Skip tracking pixels and known garbage URLs
+  const skip = ['pixel.gif', '1x1', 'tracking', 'beacon', '.gif?', 'logo', 'icon']
+  if (skip.some(s => url.toLowerCase().includes(s))) return false
+  // Must look like an image (or CDN url without extension is OK)
+  const imageExtensions = /\.(jpg|jpeg|png|webp|avif|svg)/i
+  const cdnPattern = /images\.|cdn\.|media\.|static\.|img\./i
+  return imageExtensions.test(url) || cdnPattern.test(url)
 }
 
 function cleanText(text?: string): string {
@@ -217,8 +249,9 @@ async function processItem(item: RSSItem, source: { id: string; name: string; la
     finalSlug = `${finalSlug}-${Date.now().toString(36)}`
   }
 
-  // Determina status automático
-  const autoPublish = processed.relevance_score >= 8.0
+  // Determina status automático (score >= 7.0 publica direto)
+  const autoPublish = processed.relevance_score >= 7.0
+  const autoFeatured = processed.relevance_score >= 9.0  // top artigos entram no destaque
   const status = autoPublish ? 'published' : 'pending'
   const publishedAt = autoPublish ? new Date().toISOString() : null
 
@@ -242,6 +275,7 @@ async function processItem(item: RSSItem, source: { id: string; name: string; la
     image_url: extractImage(item),
     relevance_score: processed.relevance_score,
     breaking: processed.breaking,
+    featured: autoFeatured,
     status,
     published_at: publishedAt,
     original_pub_at: item.isoDate || item.pubDate || null,
